@@ -110,19 +110,19 @@ fun BoxDetail (
     box : BoxDetail,
     onNavigateBack: () -> Boolean,
 ) {
-    val favoriteUiState by viewModel.favoriteBoxUiState.collectAsState()
-    var isFavorite by remember { mutableStateOf( false) }
-    isFavorite = favoriteUiState.isFavorite
+    val isFavorite by viewModel.isFavorite.collectAsState()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     var descriptionExpanded by remember { mutableStateOf(false) }
     var favoriteMessageShown by remember { mutableStateOf(false) }
 
-    suspend fun showFavoriteStatusMessage() {
-        if (!favoriteMessageShown) {
-            favoriteMessageShown = true
-            delay(2000L)
-            favoriteMessageShown = false
+    fun showFavoriteStatusMessage() {
+        scope.launch {
+            if (!favoriteMessageShown) {
+                favoriteMessageShown = true
+                delay(2000L)
+                favoriteMessageShown = false
+            }
         }
     }
 
@@ -144,24 +144,11 @@ fun BoxDetail (
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = stringResource(R.string.favorite),
                         modifier = Modifier
-                            .padding( end = 14.dp)
+                            .padding(end = 14.dp)
                             .clip(ShapeDefaults.Medium)
                             .clickable {
-                                scope.launch {
-                                    showFavoriteStatusMessage()
-                                }
-                                scope.launch {
-                                    showFavoriteStatusMessage()
-                                    viewModel.apply {
-                                        when (isFavorite) {
-                                            true -> deleteFavBox(box)
-                                            false -> addFavBox(box)
-                                        }
-                                        favoriteBoxUiState.collectLatest {
-                                            isFavorite = it.isFavorite
-                                        }
-                                    }
-                                }
+                                showFavoriteStatusMessage()
+                                viewModel.favClickHandle(box)
                             }
                     )
                 }
@@ -248,7 +235,8 @@ fun SensorItem(
     )
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.heightIn(min = animatedSizeDp)
+        modifier = Modifier
+            .heightIn(min = animatedSizeDp)
             .clickable { isIncreased = !isIncreased }
     ) {
         Row() {

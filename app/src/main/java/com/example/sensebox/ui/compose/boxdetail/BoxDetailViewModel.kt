@@ -56,6 +56,11 @@ class BoxDetailViewModel @Inject constructor (
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), FavoriteUiState(false)
     )
 
+    val isFavorite : StateFlow<Boolean> = favBoxRepository
+        .getFavBoxStream(boxId)
+        .map { boxId == it?.id }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), false)
+
     private fun getBox(id : String) {
         viewModelScope.launch {
             uiState = try {
@@ -74,7 +79,16 @@ class BoxDetailViewModel @Inject constructor (
         getBox(boxId)
     }
 
-    suspend fun addFavBox(box: BoxDetail) {
+    fun favClickHandle(box: BoxDetail) {
+        viewModelScope.launch {
+            when (isFavorite.value) {
+                false -> addFavBox(box)
+                true -> deleteFavBox(box)
+            }
+        }
+    }
+
+    private suspend fun addFavBox(box: BoxDetail) {
         val favBox = FavBox(
             id = box.id,
             name = box.name,
@@ -82,13 +96,10 @@ class BoxDetailViewModel @Inject constructor (
             sensorsCount = box.sensors.size
         )
         favBoxRepository.addItem(favBox)
-        favoriteBoxUiState = initFavoriteUiState()
-
     }
 
-    suspend fun deleteFavBox(box: BoxDetail) {
+    private suspend fun deleteFavBox(box: BoxDetail) {
         favBoxRepository.deleteBox(box.id)
-        favoriteBoxUiState = initFavoriteUiState()
     }
 }
 

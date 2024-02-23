@@ -16,7 +16,7 @@ class FavBoxRepository @Inject constructor(
     }
 
     fun getFavBoxStream(id: String) : Flow<FavBox?> {
-        return boxDao.getItem(id).filterNotNull()
+        return boxDao.getItem(id)
     }
 
     suspend fun addItem(box: FavBox) {
